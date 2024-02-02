@@ -221,12 +221,20 @@ If your configuration has a file target, you can then retrieve your compressed l
 #if RELEASE
         Crashes.GetErrorAttachments = report =>
         {
+            var task = GetErrorAttachmentsAsync(report);
+            task.RunSynchronously();
+            return task.Result;
+        };
+
+        async Task<IEnumerable<ErrorAttachmentLog>> GetErrorAttachmentsAsync(ErrorReport report)
+        {
             if (!LogOperatorRetriever.Instance.TryGetOperator<ILogCompressor>(out var logCompressor))
             {
-                return;
+                return Array.Empty<ErrorAttachmentLog>();
             }
-            var compressedLogs = logCompressor.GetCompressedLogs();
-
+        
+            var compressedLogs = await logCompressor.GetCompressedLogs();
+        
             return new[]
             {
                 ErrorAttachmentLog.AttachmentWithBinary(
@@ -234,7 +242,7 @@ If your configuration has a file target, you can then retrieve your compressed l
                     "logs.zip",
                     "application/x-zip-compressed"),
             };
-        };
+        }
 #endif
     }
 ```
